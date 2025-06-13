@@ -1,0 +1,8 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "robot-icebreaker": "./src/robot_icebreaker_agent/graph.py:graph"
+  },
+  "env": ".env",
+  "image_distro": "wolfi"
+}
