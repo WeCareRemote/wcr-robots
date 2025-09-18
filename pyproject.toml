@@ -1,9 +1,9 @@
 [project]
-name = "agent-service-toolkit"
+name = "refugee-bridge"
 version = "0.1.0"
-description = "Full toolkit for running an AI agent service built with LangGraph, FastAPI and Streamlit"
+description = "to be added later"
 readme = "README.md"
-authors = [{ name = "Joshua Carroll", email = "carroll.joshk@gmail.com" }]
+authors = [{ name = "Ans Imran", email = "ansimran@protonmail.com" }]
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
