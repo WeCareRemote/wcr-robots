@@ -1,0 +1,172 @@
+Q1: What is your current legal status in Germany?
+1. Temporary Protection under EU Directive 
+2. Asylum application pending 
+3. Asylum granted 
+4. German residence permit 
+5. Other status 
+6. Unsure
+
+
+Q2: Do you intend to return to Ukraine?
+1. Permanently 
+2. Temporarily for a visit 
+3. Temporarily for family reasons 
+4. Temporarily for work or business 
+5. Not decided yet 
+6. Exploring options
+
+
+Q3: When do you plan to travel?
+1. Within 1 month 
+2. 1-3 months 
+3. 3-6 months 
+4. 6-12 months 
+5. More than 1 year 
+6. Flexible depending on circumstances
+
+
+Q4: Which Ukrainian passport or identification documents do you currently have?
+1. Valid Ukrainian passport 
+2. Expired Ukrainian passport 
+3. Ukrainian ID card 
+4. Ukrainian birth certificate 
+5. No Ukrainian documents 
+6. Emergency travel document needed
+
+
+Q5: Are you currently employed or receiving social benefits in Germany?
+1. Employed full-time 
+2. Employed part-time 
+3. Unemployed receiving benefits 
+4. Student with support 
+5. Self-employed 
+6. Other income source
+
+
+Q6: Will you need to complete Abmeldung before leaving Germany?
+1. Yes, I understand this requirement 
+2. Yes, but need guidance on the process 
+3. No, planning to maintain German registration 
+4. Unsure about requirements 
+5. Not applicable to my situation
+<definition>
+Abmeldung in Germany means deregistering your address when you move out or leave the country.
+You must inform the local office (Bürgeramt or Einwohnermeldeamt) that you no longer live at your German address.
+Afterward, you get a deregistration certificate, which helps you cancel contracts, insurance, or services.
+This should be done shortly before or within about two weeks after leaving your home in Germany.
+<\definition>
+
+
+Q7: Which region of Ukraine do you plan to return to?
+1. Western regions 
+2. Central regions 
+3. Eastern regions 
+4. Southern regions 
+5. Multiple regions 
+6. Haven't decided 
+7. Region is currently not accessible
+
+
+Q8: Are there family members who will travel with you?
+1. Traveling alone 
+2. With spouse or partner 
+3. With children under 18 
+4. With elderly parents or relatives 
+5. With disabled family member 
+6. Large family group 
+7. Split travel arrangements needed
+
+
+Q9: Do any travelers have special documentation needs?
+1. Medical conditions requiring documentation 
+2. Disability accommodation letters 
+3. Prescription medication records 
+4. Educational documents for children 
+5. Employment verification letters 
+6. No special needs
+
+
+Q10: Are you planning to return to Germany after your trip?
+1. Yes, definitely returning 
+2. Possibly returning 
+3. Decision depends on Ukraine situation 
+4. No, permanent return to Ukraine 
+5. Unsure at this time
+
+
+Q11: Do you need help obtaining or renewing travel documents?
+1. Ukrainian passport renewal in Germany 
+2. Emergency travel documents 
+3. Travel documents for family members 
+4. Transit visas for other countries 
+5. No document assistance needed
+
+
+Q12: Have you contacted Ukrainian authorities about your return?
+1. Yes, already in contact 
+2. Planning to contact them 
+3. Need help contacting authorities 
+4. Not sure who to contact 
+5. Prefer not to contact authorities yet
+
+
+Q13: Are there any ongoing legal proceedings affecting your status?
+1. Appeal or court case pending 
+2. Status review in progress 
+3. Application for permanent residency 
+4. Family reunification case 
+5. No pending legal matters
+
+
+Q14: Do you need assistance with travel and transport logistics?
+1. Flight booking help 
+2. Ground transportation in Ukraine 
+3. Assistance at border crossing 
+4. Wheelchair accessibility needs 
+5. Pet transport 
+6. No transport assistance needed
+
+
+Q15: Will you need financial support for travel?
+1. Full travel cost assistance 
+2. Partial financial help 
+3. Emergency funds availability 
+4. Financial planning guidance 
+5. No financial assistance needed
+
+
+Q16: Are there any safety or security concerns about your return?
+1. Security situation in destination region 
+2. Personal safety concerns 
+3. Medical emergency preparedness 
+4. Communication with family in Ukraine 
+5. No particular concerns
+
+
+Q17: Do you have full legal authority to provide this information and represent the person(s) this questionnaire concerns?
+1. Yes, providing information for myself 
+2. Yes, I am the legal guardian or parent 
+3. Yes, I have power of attorney 
+4. No, someone else should provide this information
+
+
+Q18: What is your full name (PII) ?
+1. 
+
+
+Q19: What is your current address in Germany (PII) ?
+1. 
+
+
+Q20: What is your phone number and email address (PII) ?
+1. 
+
+
+Q21: What is your date of birth and Ukrainian identification number if available (PII) ?
+1. 
+
+
+Q22: Is there anything else you would like to mention or any additional information that might be helpful (PII) ?
+1. 
+
+

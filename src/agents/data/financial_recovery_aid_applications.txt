@@ -1,0 +1,227 @@
+Q1: What is your current monthly income from all sources?
+1. Less than €500 
+2. €500-€1,000 
+3. €1,000-€1,500 
+4. €1,500-€2,000 
+5. More than €2,000 
+6. Prefer not to say
+
+
+Q2: How has your financial situation changed since arriving in Germany?
+1. Much worse than in Ukraine 
+2. Somewhat worse 
+3. About the same 
+4. Somewhat better 
+5. Much better
+
+
+Q3: Are you currently receiving German social benefits?
+1. Yes, Bürgergeld 
+2. Yes, other benefits 
+3. Applied but waiting 
+4. No, not eligible 
+5. No, haven't applied 
+6. Not sure
+
+
+Q4: What are your biggest monthly expenses right now?
+1. Housing 
+2. Food 
+3. Healthcare 
+4. Childcare 
+5. Transportation 
+6. Debt payments 
+7. Remittances to family 
+8. Other
+
+
+Q5: Do you currently have access to banking services in Germany?
+1. Yes, full banking account 
+2. Yes, basic account 
+3. Limited access 
+4. No, but trying to get access 
+5. No, prefer not to use banks
+
+
+Q6: Did you own property or a business in Ukraine?
+1. Yes, residential property 
+2. Yes, commercial property 
+3. Yes, business 
+4. Yes, both property and business 
+5. No, was renting 
+6. No property or business
+
+
+Q7: Have you experienced property damage or loss due to the conflict?
+1. Complete destruction 
+2. Severe damage 
+3. Some damage 
+4. Minor damage 
+5. No damage 
+6. Unable to verify current status
+
+
+Q8: Do you have documentation of your Ukrainian assets or property?
+1. Yes, complete documentation 
+2. Yes, partial documentation 
+3. No, lost during evacuation 
+4. No, never had formal documentation 
+5. Documents are with family/friends
+
+
+Q9: Have you received any compensation for property damage or losses?
+1. Yes, from Ukrainian government 
+2. Yes, from insurance 
+3. Yes, from international organizations 
+4. Applied but still waiting 
+5. No, haven't applied 
+6. Not aware compensation exists
+
+
+Q10: What was your primary occupation in Ukraine?
+1. Professional/technical 
+2. Management/administration 
+3. Healthcare/education 
+4. Skilled trades 
+5. Service industry 
+6. Agriculture 
+7. Student 
+8. Retired 
+9. Unemployed
+
+
+Q11: Are you currently employed in Germany?
+1. Yes, full-time permanent 
+2. Yes, part-time permanent 
+3. Yes, temporary work 
+4. Self-employed 
+5. Unemployed but seeking work 
+6. Unable to work 
+7. Student 
+8. Retired
+
+
+Q12: How would you describe your current employment compared to your work in Ukraine?
+1. Much better position 
+2. Somewhat better 
+3. Similar level 
+4. Somewhat lower level 
+5. Much lower level 
+6. Not applicable
+
+
+Q13: Have you had your professional qualifications recognized in Germany?
+1. Yes, fully recognized 
+2. Yes, partially recognized 
+3. In process of recognition 
+4. Applied but rejected 
+5. Haven't applied yet 
+6. Not necessary for my work 
+7. Don't know how to apply
+
+
+Q14: What are your most urgent financial needs right now?
+1. Basic living expenses 
+2. Housing costs 
+3. Medical expenses 
+4. Educational expenses 
+5. Professional development 
+6. Legal assistance 
+7. Family support 
+8. Debt management
+
+
+Q15: What type of financial assistance would be most helpful for your recovery?
+1. One-time emergency aid 
+2. Monthly ongoing support 
+3. Professional training funding 
+4. Business startup capital 
+5. Educational scholarships 
+6. Medical expense coverage 
+7. Legal fee assistance 
+8. Housing assistance
+
+
+Q16: Have you previously applied for financial aid in Germany?
+1. Yes, successfully received aid 
+2. Yes, but application rejected 
+3. Yes, still waiting for decision 
+4. Applied multiple times with mixed results 
+5. No, haven't applied 
+6. No, don't know how to apply
+
+
+Q17: Do you send money to family members in Ukraine or elsewhere?
+1. Yes, regularly 
+2. Yes, occasionally 
+3. Yes, but very rarely 
+4. No, but would like to 
+5. No, not needed 
+6. No, cannot afford to
+
+
+Q18: What are your main financial goals for the next 2-3 years?
+1. Achieve financial independence 
+2. Start or restart a career 
+3. Start a business 
+4. Buy property 
+5. Support family education 
+6. Save for return to Ukraine 
+7. Build retirement savings 
+8. Just maintain basic stability
+
+
+Q19: How do you plan your financial future?
+1. Plan to return to Ukraine permanently 
+2. Plan to stay in Germany permanently 
+3. Will decide based on circumstances 
+4. Planning for both possibilities 
+5. Too uncertain to plan 
+6. Prefer not to say
+
+
+Q20: What is your biggest obstacle to financial recovery?
+1. Language barriers 
+2. Qualification recognition 
+3. Lack of job opportunities 
+4. Insufficient income 
+5. Complex bureaucracy 
+6. Health issues 
+7. Childcare responsibilities 
+8. Discrimination
+
+
+Q21: How comfortable are you with German financial and banking systems?
+1. Very comfortable 
+2. Somewhat comfortable 
+3. Neutral 
+4. Somewhat uncomfortable 
+5. Very uncomfortable 
+6. Need assistance to navigate
+
+
+Q22: Do you have full legal authority to provide this information and represent the person(s) this questionnaire concerns?
+1. Yes 
+2. No
+
+
+Q23: Is there anything else you would like to mention or any additional information that might be helpful? (PII) ?
+1.
+
+
+Q24: Full name (PII) ?
+1.
+
+
+Q25: Contact phone number (PII) ?
+1.
+
+
+Q26: Email address (PII) ?
+1.
+
+
+Q27: Current address in Germany (PII) ?
+1.
+
+
