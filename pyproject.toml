@@ -66,6 +66,8 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4,<2.0.0",
     "bcrypt==4.3.0",
     "pyjwt>=2.8.0,<3.0.0",
+    "pyppeteer>=2.0.0",
+    "grandalf>=0.8",
 ]
 
 [dependency-groups]
