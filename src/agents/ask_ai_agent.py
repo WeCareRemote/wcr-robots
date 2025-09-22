@@ -8,8 +8,8 @@ from typing import Optional, Literal, Annotated, List, Dict, Any
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.types import StreamWriter
-from langgraph.graph.message import add_messages
 
+from schema import Ask_Ai_AgentState
 from core import get_model, settings
 
 VERBOSE = True
@@ -55,43 +55,7 @@ RELEVANCE_GRADER_PROMPT = ChatPromptTemplate.from_messages([
 
 
 
-class AgentState(BaseModel):
-    """
-    Main state for the LangGraph Agent.
 
-    Purpose:
-    - Holds the evolving state of the refugee-support assistant while guiding users through forms on wcr.is.
-    - Acts as the single source of truth passed between graph nodes.
-    - Stores conversation history, user context, and control flags used in routing decisions.
-
-    Attributes:
-    - messages: List of conversation messages (Human, AI, System). Maintains dialogue history.
-    - context_form: String of the current form the user is filling, or None if no form is active.
-    - user_question: The most recent human message text, extracted for relevance checks and answering.
-    - cant_help_text: Predefined fallback text sent when the assistant cannot provide help.
-    """
-    messages: Annotated[List[BaseMessage], add_messages] = Field(default_factory=list)
-    
-    context_form: Optional[str] = Field(
-        default     = None,
-        title       = "Context Form",
-        description = (
-            "Full STRING of the current form being filled by the user. "
-            "Set to None when no form is active."
-        ),
-    )
-    
-    user_question:  Optional[str] = Field(
-        default     = None,
-        title       = "User Question",
-        description = ("The crrent question that the user has asked."),
-    )
-    
-    cant_help_text: str = Field(
-        default     = "Sorry, I cannot help you in this matter.",
-        title       = "Cannot Help Text",
-        description = ("A Predefined Text. If the user's question is not related to refugee help. This predefined text is streamed"),
-    )
 
 
 
@@ -140,7 +104,7 @@ def trim_messages(messages: List[BaseMessage], max_messages: int = 8) -> List[Ba
     return messages[-max_messages:]
 
 
-async def query_relevance(state: AgentState, config: RunnableConfig) -> AgentState:
+async def query_relevance(state: Ask_Ai_AgentState, config: RunnableConfig) -> Ask_Ai_AgentState:
     """
     Prepare the user's last question for the relevance check.
 
@@ -150,7 +114,7 @@ async def query_relevance(state: AgentState, config: RunnableConfig) -> AgentSta
     3. Extract the latest human message text.
     4. Save that text into state as `user_question`.
 
-    Returns a partial AgentState with only the new `user_question` set.
+    Returns a partial Ask_Ai_AgentState with only the new `user_question` set.
     """
     msgs = trim_messages(state.messages)
     text = last_human_text(msgs) or ""
@@ -159,7 +123,7 @@ async def query_relevance(state: AgentState, config: RunnableConfig) -> AgentSta
 
 
 
-async def query_relevance_router(state: AgentState, config: RunnableConfig) -> Literal["cant_help", "answer_user_query"]:
+async def query_relevance_router(state: Ask_Ai_AgentState, config: RunnableConfig) -> Literal["cant_help", "answer_user_query"]:
     """
     Decide whether the assistant should answer the user or decline.
 
@@ -200,7 +164,7 @@ async def query_relevance_router(state: AgentState, config: RunnableConfig) -> L
 
 
         
-async def cant_help(state: AgentState, config: RunnableConfig, writer: StreamWriter) -> AgentState:  # writer auto-injected
+async def cant_help(state: Ask_Ai_AgentState, config: RunnableConfig, writer: StreamWriter) -> Ask_Ai_AgentState:  # writer auto-injected
     """
     Send a polite message when the assistant cannot help.
 
@@ -218,12 +182,12 @@ async def cant_help(state: AgentState, config: RunnableConfig, writer: StreamWri
         writer: Streaming callback, auto-injected by LangGraph.
 
     Returns:
-        AgentState update with the assistant's "can't help" message.
+        Ask_Ai_AgentState update with the assistant's "can't help" message.
     """
     cfg = get_cfg(config)
     user_language = cfg.get("user_language", "english")
 
-    print(user_language)
+    # print(user_language)
 
     if user_language.lower() == 'russian':
         state.cant_help_text = 'Извините, я не могу вам помочь в этом вопросе.'
@@ -276,7 +240,7 @@ Current form:
 
 
 
-async def answer_user_query(state: AgentState, config: RunnableConfig) -> AgentState:
+async def answer_user_query(state: Ask_Ai_AgentState, config: RunnableConfig) -> Ask_Ai_AgentState:
     """
     Generate a helpful answer to the user's question.
 
@@ -293,7 +257,7 @@ async def answer_user_query(state: AgentState, config: RunnableConfig) -> AgentS
         config: Runtime configuration with user-specific settings.
 
     Returns:
-        AgentState update with the assistant's generated answer.
+        Ask_Ai_AgentState update with the assistant's generated answer.
     """
     cfg = get_cfg(config)
     user_language = cfg.get("user_language", "english")
@@ -311,8 +275,8 @@ async def answer_user_query(state: AgentState, config: RunnableConfig) -> AgentS
         form_str=form_str,
         user_language=user_language,
     )
-    print(user_language)
-    print(form_str)
+    # print(user_language)
+    # print(form_str)
 
     messages = [SystemMessage(content=system_msg)] + trim_messages(state.messages)
     response = await model.ainvoke(messages, config=config)
@@ -324,7 +288,7 @@ async def answer_user_query(state: AgentState, config: RunnableConfig) -> AgentS
 # -------------------------
 # BUILD THE GRAPH
 # -------------------------
-builder = StateGraph(AgentState)
+builder = StateGraph(Ask_Ai_AgentState)
 builder.add_node("query_relevance", query_relevance)
 builder.add_node("answer_user_query", answer_user_query)
 builder.add_node("cant_help", cant_help)

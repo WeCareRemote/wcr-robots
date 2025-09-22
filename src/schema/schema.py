@@ -1,7 +1,9 @@
-from typing import Any, Literal, NotRequired
+from langgraph.graph.message import add_messages
+from langchain_core.messages import BaseMessage
 
 from pydantic import BaseModel, Field, SerializeAsAny
 from typing_extensions import TypedDict
+from typing import Any, Literal, NotRequired, Optional, Annotated, List, Dict
 
 from schema.models import AllModelEnum, AnthropicModelName, OpenAIModelName
 
@@ -185,3 +187,43 @@ class ChatHistoryInput(BaseModel):
 
 class ChatHistory(BaseModel):
     messages: list[ChatMessage]
+
+
+
+class Ask_Ai_AgentState(BaseModel):
+    """
+    Main state for the LangGraph Agent.
+
+    Purpose:
+    - Holds the evolving state of the refugee-support assistant while guiding users through forms on wcr.is.
+    - Acts as the single source of truth passed between graph nodes.
+    - Stores conversation history, user context, and control flags used in routing decisions.
+
+    Attributes:
+    - messages: List of conversation messages (Human, AI, System). Maintains dialogue history.
+    - context_form: String of the current form the user is filling, or None if no form is active.
+    - user_question: The most recent human message text, extracted for relevance checks and answering.
+    - cant_help_text: Predefined fallback text sent when the assistant cannot provide help.
+    """
+    messages: Annotated[List[BaseMessage], add_messages] = Field(default_factory=list)
+    
+    context_form: Optional[str] = Field(
+        default     = None,
+        title       = "Context Form",
+        description = (
+            "Full STRING of the current form being filled by the user. "
+            "Set to None when no form is active."
+        ),
+    )
+    
+    user_question:  Optional[str] = Field(
+        default     = None,
+        title       = "User Question",
+        description = ("The crrent question that the user has asked."),
+    )
+    
+    cant_help_text: str = Field(
+        default     = "Sorry, I cannot help you in this matter.",
+        title       = "Cannot Help Text",
+        description = ("A Predefined Text. If the user's question is not related to refugee help. This predefined text is streamed"),
+    )
