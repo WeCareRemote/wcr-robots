@@ -221,8 +221,10 @@ async def cant_help(state: AgentState, config: RunnableConfig, writer: StreamWri
         AgentState update with the assistant's "can't help" message.
     """
     cfg = get_cfg(config)
-    user_language = cfg.get("user_language", "English")
-    
+    user_language = cfg.get("user_language", "english")
+
+    print(user_language)
+
     if user_language.lower() == 'russian':
         state.cant_help_text = 'Извините, я не могу вам помочь в этом вопросе.'
     elif user_language.lower() == 'ukrainian':
@@ -294,7 +296,7 @@ async def answer_user_query(state: AgentState, config: RunnableConfig) -> AgentS
         AgentState update with the assistant's generated answer.
     """
     cfg = get_cfg(config)
-    user_language = cfg.get("user_language", "English")
+    user_language = cfg.get("user_language", "english")
     form_str = cfg.get("form_str", "—")
 
     # model = ChatGoogleGenerativeAI(
@@ -309,6 +311,8 @@ async def answer_user_query(state: AgentState, config: RunnableConfig) -> AgentS
         form_str=form_str,
         user_language=user_language,
     )
+    print(user_language)
+    print(form_str)
 
     messages = [SystemMessage(content=system_msg)] + trim_messages(state.messages)
     response = await model.ainvoke(messages, config=config)

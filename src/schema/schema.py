@@ -63,7 +63,6 @@ class UserInput(BaseModel):
     agent_config: dict[str, Any] = Field(
         description="Additional configuration to pass through to the agent",
         default={},
-        examples=[{"spicy_level": 0.8}],
     )
     form_str: str | None = Field(
         description="Full STRING of the current form being filled by the user. Set to None when no form is active.",

@@ -1,6 +1,7 @@
 uv run python run_service.py
 uv run streamlit run streamlit_app.py
 
+gemini-2.0-flash-lite
 
 
 
