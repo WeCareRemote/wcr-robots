@@ -65,6 +65,19 @@ class UserInput(BaseModel):
         default={},
         examples=[{"spicy_level": 0.8}],
     )
+    form_str: str | None = Field(
+        description="Full STRING of the current form being filled by the user. Set to None when no form is active.",
+        default=None,
+        examples=["Name: Return Journey Planning Form \nQ1: What is your current legal status in Germany? \n1. Temporary Protection under EU Directive ..."],
+    )
+    user_language: str | None = Field(
+        description="The language of the user.",
+        default='english',
+        examples=['english', 'russian', 'ukrainian', 'german'],
+    )
+
+
+
 
 
 class StreamInput(UserInput):

@@ -1,4 +1,4 @@
-Nam: Return Journey Planning Eligibility And Legal Lequirements Form
+Name: Return Journey Planning Eligibility And Legal Lequirements Form
 
 Q1: What is your current legal status in Germany?
 1. Temporary Protection under EU Directive 
