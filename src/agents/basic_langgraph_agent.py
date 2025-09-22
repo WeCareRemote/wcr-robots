@@ -39,7 +39,8 @@ async def acall_model(state: AgentState, config: RunnableConfig) -> AgentState:
        - Enforces step budget if tool calls remain."""
     
     # can later decide to pace it outside the fn, if observed high latency in traces
-    model      = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL)) 
+    model      = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
+
     
     system_msg = MODEL_SYSTEM_MESSAGE.format(accounting_services=accounting_services)
     response   = await model.ainvoke(

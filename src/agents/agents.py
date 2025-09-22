@@ -4,6 +4,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.pregel import Pregel
 
 from agents.basic_langgraph_agent import basic_langgraph_agent
+from agents.ask_ai_agent import ask_ai_agent
 
 from schema import AgentInfo
 
@@ -25,7 +26,11 @@ agents: dict[str, Agent] = {
     "basic_langgraph_agent":Agent(
         description = "A very basic langgraph based chatbot.",
         graph       = basic_langgraph_agent
-    ),  
+    ),
+    "ask_ai_agent":Agent(
+        description = "A langgraph based agent for wcr.is.",
+        graph       = ask_ai_agent
+    )
 }
 
 # returns agent object
