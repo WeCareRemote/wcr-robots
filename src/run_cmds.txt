@@ -30,9 +30,9 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc1NzE2NTM0MSw
 -----------
 
 from windows:
-curl -X POST "http://localhost:8080/self_corrective_rag/stream" ^
+curl -X POST "http://localhost:8080/ask_ai_agent/stream" ^
   -H "accept: text/event-stream" ^
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoicHJveHkiLCJpYXQiOjE3NTczMjc0MzgsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsImF1ZCI6ImZhc3RhcGlfYWdlbnRfbWljcm9zZXJ2aWNlIiwic3ViIjoiZWRnZS1wcm94eSIsImV4cCI6MTc1NzMyOTIzOH0.AerR9jpAdu9noFceQzaQd-FuEWEKHOB9qm5ceZs1ErE" ^
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoicHJveHkiLCJpYXQiOjE3NTg2MTgzMjQsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsImF1ZCI6ImZhc3RhcGlfYWdlbnRfbWljcm9zZXJ2aWNlIiwic3ViIjoiZWRnZS1wcm94eSIsImV4cCI6MTc1ODYyMDEyNH0.pIAtLUBhvh-7ohmljBzHzCok2dIgNYwxTGP7QlnISdg" ^
   -H "Content-Type: application/json" ^
   -d "{ \"message\": \"paye?\", \"model\": \"gpt-4o-mini\", \"thread_id\": \"847c6285-8fc9-4560-a83f-4e6285809254\", \"user_id\": \"847c6285-8fc9-4560-a83f-4e6285809254\", \"agent_config\": { \"spicy_level\": 0.8 }, \"stream_tokens\": true }"
 
@@ -53,6 +53,32 @@ hitting via proxy, (Next.js API route at /api/chat (the Edge server-side code)).
 curl -N -i http://host.docker.internal:3000/api/chat \
   -H "Content-Type: application/json" \
   --data '{"messages":[{"id":"m1","role":"user","parts":[{"type":"text","text":"hello?"}]}]}'
+
+
+
+curl -X 'POST' \
+  'http://localhost:8080/ask_ai_agent/stream' \
+  -H 'accept: text/event-stream' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoicHJveHkiLCJpYXQiOjE3NTg2MjU1NDAsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsImF1ZCI6ImZhc3RhcGlfYWdlbnRfbWljcm9zZXJ2aWNlIiwic3ViIjoidGVzdF91c2VyX2lkXzEiLCJleHAiOjE3NTg2MjczNDB9.WFkGe-XYlhIoDuvqgZ9O4-CpeCX5fI4OXjXCLJrUK-8' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "message": "hi?",
+  "model": "gpt-4o-mini",
+  "thread_id": "847c6285-8fc9-4560-a83f-4e6285809254",
+  "agent_config": {},
+  "form_str": "Name: Return Journey Planning Form \nQ1: What is your current legal status in Germany? \n1. Temporary Protection under EU Directive ...",
+  "user_language": "english",
+  "stream_tokens": true
+}'
+
+
+
+curl -X POST ^
+  "http://localhost:8080/ask_ai_agent/stream" ^
+  -H "accept: text/event-stream" ^
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoicHJveHkiLCJpYXQiOjE3NTg2MjU1NDAsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsImF1ZCI6ImZhc3RhcGlfYWdlbnRfbWljcm9zZXJ2aWNlIiwic3ViIjoidGVzdF91c2VyX2lkXzEiLCJleHAiOjE3NTg2MjczNDB9.WFkGe-XYlhIoDuvqgZ9O4-CpeCX5fI4OXjXCLJrUK-8" ^
+  -H "Content-Type: application/json" ^
+  --data-raw "{\"message\":\"hi?\",\"model\":\"gpt-4o-mini\",\"thread_id\":\"847c6285-8fc9-4560-a83f-4e6285809254\",\"agent_config\":{},\"form_str\":\"Name: Return Journey Planning Form \\nQ1: What is your current legal status in Germany? \\n1. Temporary Protection under EU Directive ...\",\"user_language\":\"english\",\"stream_tokens\":true}"
 
 
 

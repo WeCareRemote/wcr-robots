@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Request
 from langchain_core._api import LangChainBetaWarning
 from langchain_core.messages import AIMessage, AIMessageChunk, AnyMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
@@ -142,6 +143,7 @@ logger = logging.getLogger(__name__)
 # 9. Provides simple, single-secret, service-wide authentication.
 # 10. Acts as a **gatekeeper** without modifying the request object.
 def verify_bearer(
+    request: Request,
     http_auth: Annotated[
         HTTPAuthorizationCredentials | None,
         Depends(HTTPBearer(description="Please provide AUTH_SECRET api key.", auto_error=False)),
@@ -166,7 +168,7 @@ def verify_bearer(
         print(token)
         payload    = jwt.decode(token, AUTH_SECRET_BYTES, algorithms=[ALGORITHM], issuer="http://localhost:3000", audience="fastapi_agent_microservice") # settings.AUTH_SECRET.get_secret_value()
         token_data = TokenPayload(**payload)
-        print(token_data.model_dump())
+        # print(token_data.model_dump())
     except (InvalidTokenError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -176,6 +178,9 @@ def verify_bearer(
 
     if token_data.sub is None:
         raise HTTPException(status_code=401, detail="Invalid token payload")
+    
+    request.state.jwt_sub = token_data.sub
+    # print("user_id from verify_bearer: ", request.state.jwt_sub)
     # try:
     #     user_id = uuid.UUID(token_data.sub)
     # except ValueError:
@@ -352,6 +357,7 @@ async def _handle_input(user_input: UserInput, agent: AgentGraph) -> tuple[dict[
     Parse user input and handle any required interrupt resumption.
     Returns kwargs for agent invocation and the run_id.
     """
+
     run_id        = uuid4()
     thread_id     = user_input.thread_id or str(uuid4())
     user_id       = user_input.user_id   or str(uuid4())
@@ -413,7 +419,7 @@ async def _handle_input(user_input: UserInput, agent: AgentGraph) -> tuple[dict[
 
 @router.post("/{agent_id}/invoke")
 @router.post("/invoke")
-async def invoke(user_input: UserInput, agent_id: str = DEFAULT_AGENT) -> ChatMessage:
+async def invoke(user_input: UserInput, request: Request, agent_id: str = DEFAULT_AGENT) -> ChatMessage:
     """
     Invoke an agent with user input to retrieve a final response.
 
@@ -428,6 +434,13 @@ async def invoke(user_input: UserInput, agent_id: str = DEFAULT_AGENT) -> ChatMe
     # you'd want to include it. You could update the API to return a list of ChatMessages
     # in that case.
     agent: AgentGraph = get_agent(agent_id)
+
+
+    # If auth is enabled and dependency set user_id, prefer it
+    jwt_sub = getattr(request.state, "jwt_sub", None)
+    if jwt_sub:
+        user_input.user_id = jwt_sub
+    # print("user_id from invoke endpoint: ", request.state.jwt_sub)
 
     kwargs, run_id    = await _handle_input(user_input, agent)
 
@@ -620,14 +633,22 @@ def _sse_response_example() -> dict[int | str, Any]:
     responses=_sse_response_example(),
 )
 @router.post("/stream", response_class=StreamingResponse, responses=_sse_response_example())
-async def stream(user_input: StreamInput, agent_id: str = DEFAULT_AGENT) -> StreamingResponse:
+async def stream(user_input: StreamInput, request:Request, agent_id: str = DEFAULT_AGENT) -> StreamingResponse:
     # >>> NEW: add the UI message stream header (no middleware)
     headers = {
         "x-vercel-ai-ui-message-stream": "v1",
         "Cache-Control": "no-cache, no-transform",
         "Connection": "keep-alive",
     }
-#    print(user_input.model_dump())
+
+    # If auth is enabled and dependency set user_id, prefer it
+    jwt_sub = getattr(request.state, "jwt_sub", None)
+    if jwt_sub:
+        user_input.user_id = jwt_sub
+    # print('user_id from stream endpoint', user_input.user_id)
+
+
+
     return StreamingResponse(
         message_generator(user_input, agent_id),
         media_type="text/event-stream",
