@@ -1,9 +1,18 @@
-FROM python:3.12.3-slim
+# ./docker/Dockerfile.service
+FROM python:3.13-slim
 
 WORKDIR /app
 
 ENV UV_PROJECT_ENVIRONMENT="/usr/local/"
 ENV UV_COMPILE_BYTECODE=1
+
+# build deps for psycopg2 + curl + CA certs
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    curl \
+    ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml .
 COPY uv.lock .

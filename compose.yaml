@@ -1,8 +1,9 @@
+# ./compose.yml
 services:
   postgres:
-    image: postgres:16
+    image: timescale/timescaledb-ha:pg16
     ports:
-      - "5420:5432"
+      - "5432:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
@@ -22,61 +23,22 @@ services:
     ports:
       - "8080:8080"
     env_file:
-      - .env
+      - .env               # <-- switch between .env.local and .env.prod by changing this line or using --env-file
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/info"]
+      # (now works because we install curl in the Dockerfile below)
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/info"]
       interval: 5s
       timeout: 5s
       retries: 5
-    # Volume mount of development-only credentials since compose watch doesn't sync ignored files and doesn't do initial sync when the service starts
     volumes:
       - ./privatecredentials:/privatecredentials
-    develop:
-      watch:
-        - path: src/agents/
-          action: sync+restart
-          target: /app/agents/
-        - path: src/schema/
-          action: sync+restart
-          target: /app/schema/
-        - path: src/service/
-          action: sync+restart
-          target: /app/service/
-        - path: src/core/
-          action: sync+restart
-          target: /app/core/
-        - path: src/memory/
-          action: sync+restart
-          target: /app/memory/
-  streamlit_app:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.app
-    ports:
-      - "8501:8501"
-    depends_on:
-      - agent_service
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501/healthz"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    environment:
-      - AGENT_URL=http://agent_service:8080
-    develop:
-      watch:
-        - path: src/client/
-          action: sync+restart
-          target: /app/client/
-        - path: src/schema/
-          action: sync+restart
-          target: /app/schema/
-        - path: src/streamlit_app.py
-          action: sync+restart
-          target: /app/streamlit_app.py
+
+    # IMPORTANT for Windows + local Langfuse. Safe to leave in for prod too.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   postgres_data:
