@@ -269,15 +269,25 @@ env_origins = None
 
 ALLOWED_ORIGINS = env_origins or DEFAULT_ORIGINS
 
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=ALLOWED_ORIGINS,
+#     allow_methods=["POST", "OPTIONS"],   # your endpoint is POST /.../stream
+#     allow_headers=["*"],                 # accepts JSON + SSE
+#     expose_headers=["x-vercel-ai-ui-message-stream"],  # let the browser read this if needed
+#     allow_credentials=False,             # set True later if you use cookies across origins
+# )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["POST", "OPTIONS"],   # your endpoint is POST /.../stream
-    allow_headers=["*"],                 # accepts JSON + SSE
-    expose_headers=["x-vercel-ai-ui-message-stream"],  # let the browser read this if needed
-    allow_credentials=False,             # set True later if you use cookies across origins
+    allow_origins=["*"],                         # allow all origins (TEMP ONLY)
+    allow_methods=["*"],                         # or ["POST", "OPTIONS"] if you prefer stricter
+    allow_headers=["*"],                         # accept any request headers
+    expose_headers=["x-vercel-ai-ui-message-stream"],
+    allow_credentials=False,                     # must be False when using "*"
+    max_age=3600,                                # cache preflight for an hour
 )
-
+print('---temporarily allowed all origins---')
 
 
 
