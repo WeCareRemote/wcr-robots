@@ -11,6 +11,7 @@ from schema.schema import (
     ServiceMetadata,
     StreamInput,
     UserInput,
+    TokenPayload,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "FeedbackResponse",
     "ChatHistoryInput",
     "ChatHistory",
+    "TokenPayload",
 ]

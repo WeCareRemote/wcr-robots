@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, SerializeAsAny
 from typing_extensions import TypedDict
 from typing import Any, Literal, NotRequired, Optional, Annotated, List, Dict
+from sqlmodel import SQLModel
 
 from schema.models import AllModelEnum, AnthropicModelName, OpenAIModelName
 
@@ -186,4 +187,16 @@ class ChatHistory(BaseModel):
     messages: list[ChatMessage]
 
 
+# jwt related code
+class TokenPayload(SQLModel):
+    """
+    Minimal set of claims extracted from a JWT.
+
+    Attributes
+    ----------
+    sub : str | None
+        The "subject" claim, it is the unique user identifier, a uuid4-string.
+        May be `None` for anonymous/invalid tokens or when not present.
+    """
+    sub: Optional[str] = None
 

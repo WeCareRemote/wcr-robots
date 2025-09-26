@@ -5,7 +5,7 @@ import json
 import inspect
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 from uuid import UUID, uuid4
 
 
@@ -52,6 +52,7 @@ from schema import (
     ServiceMetadata,
     StreamInput,
     UserInput,
+    TokenPayload,
 )
 from service.utils import (
     convert_message_content_to_string,
@@ -64,20 +65,6 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
 import base64
-from sqlmodel import SQLModel
-
-# jwt related code
-class TokenPayload(SQLModel):
-    """
-    Minimal set of claims extracted from a JWT.
-
-    Attributes
-    ----------
-    sub : str | None
-        The "subject" claim, it is the unique user identifier, a uuid4-string.
-        May be `None` for anonymous/invalid tokens or when not present.
-    """
-    sub: Optional[str] = None
 
 
 # Access API keys and credentials
