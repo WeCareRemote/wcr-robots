@@ -1,19 +1,19 @@
-import inspect
-import json
+import os
 import logging
 import warnings
+import json
+import inspect
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
 from uuid import UUID, uuid4
-import uuid
-import os
 
+
+from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from fastapi import Request
 from langchain_core._api import LangChainBetaWarning
 from langchain_core.messages import AIMessage, AIMessageChunk, AnyMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
@@ -21,15 +21,6 @@ from langfuse import Langfuse  # type: ignore[import-untyped]
 from langfuse.langchain import CallbackHandler  # type: ignore[import-untyped]
 from langgraph.types import Command, Interrupt
 from langsmith import Client as LangsmithClient
-
-
-
-
-
-
-
-
-
 
 
 # 1. Your project uses a **`src/` layout**, where `service` and `memory` are **sibling packages** under `src`.
@@ -48,9 +39,10 @@ from langsmith import Client as LangsmithClient
 # 14. The current structure is correct and Pythonic for multi-package projects.
 # 15. Relative imports are only needed if the module is a **subfolder** of the importing package.
 
+
 from agents import DEFAULT_AGENT, AgentGraph, get_agent, get_all_agent_info
 from core import settings
-from memory import initialize_database, initialize_store, get_postgres_connection_string ###########################################################
+from memory import initialize_database, initialize_store, get_postgres_connection_string
 from schema import (
     ChatHistory,
     ChatHistoryInput,
@@ -68,36 +60,38 @@ from service.utils import (
 )
 
 
-
-
-
-
-
 import jwt
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
 import base64
-
 from sqlmodel import SQLModel
 
+# jwt related code
 class TokenPayload(SQLModel):
-    sub: str | None = None
+    """
+    Minimal set of claims extracted from a JWT.
+
+    Attributes
+    ----------
+    sub : str | None
+        The "subject" claim, it is the unique user identifier, a uuid4-string.
+        May be `None` for anonymous/invalid tokens or when not present.
+    """
+    sub: Optional[str] = None
 
 
 # Access API keys and credentials
 AUTH_SECRET : str
 ALGORITHM   : str
 
-
-# will later get them from core.settings and will put in core.settings from .env
 if settings.AUTH_SECRET:
-    AUTH_SECRET = settings.AUTH_SECRET
+    AUTH_SECRET       = settings.AUTH_SECRET
     AUTH_SECRET_BYTES = base64.b64decode(AUTH_SECRET.get_secret_value().strip())
-    ALGORITHM   = 'HS256'
+    ALGORITHM         = 'HS256'
 else:
-    AUTH_SECRET=None
-    AUTH_SECRET_BYTES=None
-    ALGORITHM=None
+    AUTH_SECRET       = None
+    AUTH_SECRET_BYTES = None
+    ALGORITHM         = None
 
 
 
@@ -157,11 +151,9 @@ def verify_bearer(
     if not AUTH_SECRET_BYTES:  # auth disabled
         return
     
-
     if not http_auth or http_auth.scheme.lower() != "bearer":
         raise HTTPException(status_code=403, detail="Not authenticated")
     
-
     token = http_auth.credentials
     # Validate a token created by the external issuer (shared secret HS256 in this demo).
     try:
@@ -175,10 +167,10 @@ def verify_bearer(
             detail="Could not validate credentials",
         )
     
-
     if token_data.sub is None:
         raise HTTPException(status_code=401, detail="Invalid token payload")
     
+    # putting the user_id into request object, so that we can later use it in various enpoints e.g: invoke and stream etc...
     request.state.jwt_sub = token_data.sub
     # print("user_id from verify_bearer: ", request.state.jwt_sub)
     # try:
@@ -248,9 +240,6 @@ app    = FastAPI(lifespan=lifespan)
 
 
 
-
-
-
 # --- Configure which frontends can call your API ---
 # Dev: Next.js on localhost:3000
 # Prod: replace with your real domain(s)
@@ -278,6 +267,7 @@ ALLOWED_ORIGINS = env_origins or DEFAULT_ORIGINS
 #     allow_credentials=False,             # set True later if you use cookies across origins
 # )
 
+# temporarily allowing all origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],                         # allow all origins (TEMP ONLY)
@@ -291,12 +281,7 @@ print('---temporarily allowed all origins---')
 
 
 
-
-
 router = APIRouter(dependencies=[Depends(verify_bearer)])
-
-
-
 
 
 
@@ -312,7 +297,6 @@ async def info() -> ServiceMetadata:
         default_agent = DEFAULT_AGENT,
         default_model = settings.DEFAULT_MODEL,
     )
-
 
 
 
@@ -359,8 +343,6 @@ async def info() -> ServiceMetadata:
 # * Converts stream events to `ChatMessage` or tokens, emits as **SSE (`data: {...}`)**.
 # * Skips echoed human input and tool-use chunks.
 # * Ends with `data: [DONE]`.
-
-
 
 async def _handle_input(user_input: UserInput, agent: AgentGraph) -> tuple[dict[str, Any], UUID]:
     """
@@ -497,7 +479,7 @@ async def message_generator(
     kwargs, run_id    = await _handle_input(user_input, agent)
 
     # >>> NEW: ids + flags for UI message stream
-    msg_id   = f"msg_{uuid.uuid4().hex}"
+    msg_id   = f"msg_{uuid4().hex}"
     text_id  = f"{msg_id}_t0"
     started  = False  # sent text-start?
     finished = False  # sent text-end/finish?
