@@ -1,19 +1,17 @@
 [project]
 name = "refugee-bridge"
 version = "0.1.0"
-description = "to be added later"
+description = "Bridging the gap between refugees and NGOs, helping both sides."
 readme = "README.md"
 authors = [{ name = "Ans Imran", email = "ansimran@protonmail.com" }]
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
     "Framework :: FastAPI",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
 
-requires-python = ">=3.13,<3.14"#">=3.13,<4.0" #">=3.11" 
+requires-python = ">=3.13,<3.14"
 
 
 dependencies = [
