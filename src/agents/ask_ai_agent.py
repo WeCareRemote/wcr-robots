@@ -10,8 +10,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.types import StreamWriter
 from langfuse import Langfuse, get_client
 import json
+from langgraph.graph.message import add_messages
 
-from schema import Ask_Ai_AgentState
 from core import get_model, settings
 
 
@@ -48,27 +48,50 @@ if settings.LANGFUSE_TRACING==True:
     
     langfuse_cl = get_client(public_key=langfuse_public_key.get_secret_value())
 
-# try:
-#     # pulling prompts from Langfuse server
-#     langfuse_ANSWER_USER_QUERY_SYSTEM_MESSAGE = langfuse_cl.get_prompt(
-#         name="ANSWER_USER_QUERY_SYSTEM_MESSAGE",
-#         type="text",
-#     ).get_langchain_prompt()
-
-#     langfuse_RELEVANCE_GRADER_SYSTEM_MESSAGE = langfuse_cl.get_prompt(
-#         name="RELEVANCE_GRADER_SYSTEM_MESSAGE",
-#         type="chat",
-#     ).get_langchain_prompt()
-
-# except Exception as e:
-#     print("Unable to pull prompts from Langfuse server")
-#     print(e)
-
 
 
 
 
 #--------------------------------------- SCHEMAS ---------------------------------------
+
+class Ask_Ai_AgentState(BaseModel):
+    """
+    Main state for the LangGraph Agent.
+
+    Purpose:
+    - Holds the evolving state of the refugee-support assistant while guiding users through forms on wcr.is.
+    - Acts as the single source of truth passed between graph nodes.
+    - Stores conversation history, user context, and control flags used in routing decisions.
+
+    Attributes:
+    - messages: List of conversation messages (Human, AI, System). Maintains dialogue history.
+    - context_form: String of the current form the user is filling, or None if no form is active.
+    - user_question: The most recent human message text, extracted for relevance checks and answering.
+    - cant_help_text: Predefined fallback text sent when the assistant cannot provide help.
+    """
+    messages: Annotated[List[BaseMessage], add_messages] = Field(default_factory=list)
+    
+    context_form: Optional[str] = Field(
+        default     = None,
+        title       = "Context Form",
+        description = (
+            "Full STRING of the current form being filled by the user. "
+            "Set to None when no form is active."
+        ),
+    )
+    
+    user_question:  Optional[str] = Field(
+        default     = None,
+        title       = "User Question",
+        description = ("The crrent question that the user has asked."),
+    )
+    
+    cant_help_text: str = Field(
+        default     = "Sorry, I cannot help you in this matter.",
+        title       = "Cannot Help Text",
+        description = ("A Predefined Text. If the user's question is not related to refugee help. This predefined text is streamed"),
+    )
+
 
 class GradeRelevance(BaseModel):
     binary_score: Literal["yes", "no"] = Field(
@@ -76,44 +99,9 @@ class GradeRelevance(BaseModel):
             "Is the user's message relevant to Refugee_Bridge support for using the wcr.is website or completing its forms (including greetings while using the service)? 'yes' or 'no'."
         )
     )
-
-# RELEVANCE_GRADER_SYSTEM_MESSAGE = """
-# You are `ask ai`, an assistant for refugees using the wcr.is website. The site has multiple forms; users pick the one matching their current need and fill it out in another tab. While completing a form, they may ask about words, legal terms, or any confusing part. Your job is to guide them so they can finish the form correctly.
-
-# TASK: Decide if the user's message is relevant to Refugee_Bridge assistance. Return ONLY a binary score: 'yes' or 'no'.
-
-# Mark as 'yes' if the message concerns: using wcr.is; choosing/finding the right form; understanding or answering form questions (You do not have access to the form itself, so you must infer. If the message appears to come from a user filling out a form and asking about something within it, classify as 'yes'.); definitions of legal/immigration terms; document requirements; site navigation or technical issues; or general greetings/openers while using the service. Do NOT classify greetings as 'no'.
-
-# Mark as 'no' only if the message is clearly unrelated to refugee support or the wcr.is forms.
-# """
-
-# RELEVANCE_GRADER_PROMPT = ChatPromptTemplate.from_messages([
-#     ("system", RELEVANCE_GRADER_SYSTEM_MESSAGE),
-#     ("human",  "The user's message:\n{query}")
-# ])
-
-try:
-    langfuse_RELEVANCE_GRADER_SYSTEM_MESSAGE = langfuse_cl.get_prompt(
-        name="RELEVANCE_GRADER_SYSTEM_MESSAGE",
-        type="chat"
-    )
-    
-    RELEVANCE_GRADER_PROMPT = ChatPromptTemplate(
-        langfuse_RELEVANCE_GRADER_SYSTEM_MESSAGE.get_langchain_prompt(),
-        metadata={"langfuse_prompt": langfuse_RELEVANCE_GRADER_SYSTEM_MESSAGE}  # exactly like that for linked generation
-    )
-except Exception as e:
-    print("Unable to pull prompts from Langfuse server: RELEVANCE_GRADER_SYSTEM_MESSAGE")
-    print(e)
-
     
 
-
-
-
-
-
-    
+#--------------------------------------- FUNCTIONS ---------------------------------------
 
 def get_cfg(config: RunnableConfig) -> Dict[str, Any]:
     """
@@ -129,10 +117,6 @@ def get_cfg(config: RunnableConfig) -> Dict[str, Any]:
     """
     return (config or {}).get("configurable", {})  # type: ignore
 
-
-
-
-#--------------------------------------- NODES ---------------------------------------
 
 def last_human_text(messages: List[BaseMessage]) -> Optional[str]:
     """
@@ -156,9 +140,6 @@ def trim_messages(messages: List[BaseMessage], max_messages: int = 8) -> List[Ba
     This helps keep the context small and efficient when sending to the model.
     """
     return messages[-max_messages:]
-
-
-
 
 
 def _coerce_text(content) -> str:
@@ -224,6 +205,42 @@ def chat_history_to_text(
 
 
 
+
+
+#--------------------------------------- NODES ---------------------------------------
+# # Local Prompt creation
+# RELEVANCE_GRADER_SYSTEM_MESSAGE = """
+# You are `ask ai`, an assistant for refugees using the wcr.is website. The site has multiple forms; users pick the one matching their current need and fill it out in another tab. While completing a form, they may ask about words, legal terms, or any confusing part. Your job is to guide them so they can finish the form correctly.
+
+# TASK: Decide if the user's message is relevant to Refugee_Bridge assistance. Return ONLY a binary score: 'yes' or 'no'.
+
+# Mark as 'yes' if the message concerns: using wcr.is; choosing/finding the right form; understanding or answering form questions (You do not have access to the form itself, so you must infer. If the message appears to come from a user filling out a form and asking about something within it, classify as 'yes'.); definitions of legal/immigration terms; document requirements; site navigation or technical issues; or general greetings/openers while using the service. Do NOT classify greetings as 'no'.
+
+# Mark as 'no' only if the message is clearly unrelated to refugee support or the wcr.is forms.
+# """
+
+# RELEVANCE_GRADER_PROMPT = ChatPromptTemplate.from_messages([
+#     ("system", RELEVANCE_GRADER_SYSTEM_MESSAGE),
+#     ("human",  "The user's message:\n{query}")
+# ])
+
+
+# Pulling Prompt from LangFuse
+try:
+    langfuse_RELEVANCE_GRADER_SYSTEM_MESSAGE = langfuse_cl.get_prompt(
+        name="RELEVANCE_GRADER_SYSTEM_MESSAGE",
+        type="chat"
+    )
+    
+    RELEVANCE_GRADER_PROMPT = ChatPromptTemplate(
+        langfuse_RELEVANCE_GRADER_SYSTEM_MESSAGE.get_langchain_prompt(),
+        metadata={"langfuse_prompt": langfuse_RELEVANCE_GRADER_SYSTEM_MESSAGE}  # exactly like that for linked generation
+    )
+except Exception as e:
+    print("Unable to pull prompts from Langfuse server: RELEVANCE_GRADER_SYSTEM_MESSAGE")
+    print(e)
+
+# query_relevance node.
 async def query_relevance(state: Ask_Ai_AgentState, config: RunnableConfig) -> Ask_Ai_AgentState:
     """
     Prepare the user's last question for the relevance check.
@@ -239,8 +256,6 @@ async def query_relevance(state: Ask_Ai_AgentState, config: RunnableConfig) -> A
     msgs = trim_messages(state.messages)
     text = last_human_text(msgs) or ""
     return {"user_question": text}
-
-
 
 
 async def query_relevance_router(state: Ask_Ai_AgentState, config: RunnableConfig) -> Literal["cant_help", "answer_user_query"]:
@@ -277,7 +292,6 @@ async def query_relevance_router(state: Ask_Ai_AgentState, config: RunnableConfi
         {
             "query":         user_question,
             "chat_history":  chat_history_to_text(trim_messages(state.messages)[:-1]), 
-            
         }
     )
 
@@ -287,9 +301,7 @@ async def query_relevance_router(state: Ask_Ai_AgentState, config: RunnableConfi
 
 
 
-
-
-        
+# cant_help node
 async def cant_help(state: Ask_Ai_AgentState, config: RunnableConfig, writer: StreamWriter) -> Ask_Ai_AgentState:  # writer auto-injected
     """
     Send a polite message when the assistant cannot help.
@@ -328,7 +340,7 @@ async def cant_help(state: Ask_Ai_AgentState, config: RunnableConfig, writer: St
 
 
 
-
+# # Local Prompt creation
 # ANSWER_USER_QUERY_SYSTEM_MESSAGE = """
 # Your name is `ask ai`. You are a kind, patient assistant for refugees using the wcr.is website.
 
@@ -362,6 +374,7 @@ async def cant_help(state: Ask_Ai_AgentState, config: RunnableConfig, writer: St
 # </form>
 # """
 
+# Pulling prompt from langfuse
 try:
     langfuse_ANSWER_USER_QUERY_SYSTEM_MESSAGE = langfuse_cl.get_prompt(
         name="ANSWER_USER_QUERY_SYSTEM_MESSAGE",
@@ -375,9 +388,6 @@ try:
 except Exception as e:
     print("Unable to pull prompts from Langfuse server: ANSWER_USER_QUERY_SYSTEM_MESSAGE")
     print(e)
-
-
-
 
 
 async def answer_user_query(state: Ask_Ai_AgentState, config: RunnableConfig) -> Ask_Ai_AgentState:
@@ -448,8 +458,8 @@ builder.add_edge("answer_user_query", END)
 builder.add_conditional_edges(source="query_relevance", path=query_relevance_router, path_map=["cant_help", "answer_user_query"])
 
 # # Compile with an in-memory checkpointer; resume by calling invoke() on the same thread_id
-checkpointer = MemorySaver()
+# checkpointer = MemorySaver()
 
 # Compile the graph with persistent checkpointer and in-memory store
-ask_ai_agent = builder.compile(checkpointer=checkpointer)# store=across_thread_memory)
+ask_ai_agent = builder.compile()#checkpointer=checkpointer)# store=across_thread_memory)
 
