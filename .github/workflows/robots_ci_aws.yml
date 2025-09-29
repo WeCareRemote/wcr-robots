@@ -5,7 +5,7 @@ run-name: >
       || format('Build and Deploy Robots to {0} environment', github.ref_name == 'master' && 'prod' || 'dev') }}
 on:
   push: 
-    branches: [robot_ci]
+    branches: [main]
   workflow_call:
   workflow_dispatch:
     inputs:
