@@ -88,4 +88,4 @@ ENV LANGFUSE_PUBLIC_KEY=$LANGFUSE_PUBLIC_KEY
 ENV LANGFUSE_HOST=$LANGFUSE_HOST
 
 
-CMD ["python", "run_service.py"
+CMD ["python", "run_service.py"]
