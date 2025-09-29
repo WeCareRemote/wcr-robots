@@ -50,7 +50,37 @@ jobs:
 
       - name: Build and push
         run: |
-          docker build -f ${{ env.DOCKERFILE }} --tag ${{ env.ECR_URL }}/${{ env.CONTAINER_REGISTRY }}:${{ github.event.inputs.tag || 'latest'}} .
+          docker build -f ${{ env.DOCKERFILE }} \
+            --build-arg OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}' \
+            --build-arg AZURE_OPENAI_API_KEY='' \
+            --build-arg DEEPSEEK_API_KEY='' \
+            --build-arg ANTHROPIC_API_KEY='' \
+            --build-arg GOOGLE_API_KEY='' \
+            --build-arg GROQ_API_KEY='' \
+            --build-arg OPENROUTER_API_KEY='' \
+            --build-arg USE_AWS_BEDROCK='false' \
+            --build-arg GOOGLE_APPLICATION_CREDENTIALS='' \
+            --build-arg AWS_KB_ID='' \
+            --build-arg USE_FAKE_MODEL='false' \
+            --build-arg DEFAULT_MODEL='' \
+            --build-arg COMPATIBLE_MODEL='' \
+            --build-arg COMPATIBLE_API_KEY='' \
+            --build-arg COMPATIBLE_BASE_URL='' \
+            --build-arg AUTH_SECRET='' \
+            --build-arg DATABASE_TYPE='postgres' \
+            --build-arg HOST='0.0.0.0' \
+            --build-arg PORT='8080' \
+            --build-arg POSTGRES_HOST='postgres' \
+            --build-arg POSTGRES_PORT='5432' \
+            --build-arg POSTGRES_USER='postgres' \
+            --build-arg POSTGRES_PASSWORD='${{ secrets.POSTGRES_PASSWORD }}' \
+            --build-arg POSTGRES_DB='chat_history' \
+            --build-arg OPENWEATHERMAP_API_KEY='' \
+            --build-arg LANGFUSE_TRACING='true' \
+            --build-arg LANGFUSE_SECRET_KEY='${{ secrets.LANGFUSE_SECRET_KEY }}' \
+            --build-arg LANGFUSE_PUBLIC_KEY='${{ secrets.LANGFUSE_PUBLIC_KEY }}' \
+            --build-arg LANGFUSE_HOST='https://langfuse.wcr.is' \
+            --tag ${{ env.ECR_URL }}/${{ env.CONTAINER_REGISTRY }}:${{ github.event.inputs.tag || 'latest'}} .
           docker push ${{ env.ECR_URL }}/${{ env.CONTAINER_REGISTRY }}:${{ github.event.inputs.tag || 'latest'}}
 
   deploy:
