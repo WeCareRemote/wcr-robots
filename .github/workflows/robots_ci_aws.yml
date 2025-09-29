@@ -28,7 +28,7 @@ on:
 env:
   APPLICATION: "robot"
   APP_PATH: /opt/greyt
-  ECR_URL: "${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ github.event.inputs.region || 'eu-central-1'}}.amazonaws.com"
+  ECR_URL: "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ github.event.inputs.region || 'eu-central-1'}}.amazonaws.com"
   CONTAINER_REGISTRY: "ecr-robots"
   DOCKERFILE: "./docker/Dockerfile.service"
 
@@ -70,14 +70,14 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan ${{ secrets.SSH_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan ${{ secrets.AWS_DEV_SSH_IP }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
       - name: Deploy application using Docker Compose
         run: |
           eval $(ssh-agent -s)
-          echo "${{ secrets.SSH_KEY }}" | tr -d '\r' | ssh-add -
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} <<EOF
+          echo "${{ secrets.AWS_DEV_SSH_KEY }}" | tr -d '\r' | ssh-add -
+          ssh ${{ secrets.AWS_DEV_SSH_USER }}@${{ secrets.AWS_DEV_SSH_IP }} <<EOF
           cd ${{ env.APP_PATH }}
           aws ecr get-login-password --region ${{ github.event.inputs.region || 'eu-central-1'}} | docker login --username AWS --password-stdin ${{ env.ECR_URL }}
           docker stop ${APPLICATION} proxy || true
