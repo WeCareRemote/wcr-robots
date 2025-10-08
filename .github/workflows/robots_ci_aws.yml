@@ -5,7 +5,7 @@ run-name: >
       || format('Build and Deploy Robots to {0} environment', github.ref_name == 'master' && 'prod' || 'dev') }}
 on:
   push: 
-    branches: [robot_ci]
+    branches: [main]
   workflow_call:
   workflow_dispatch:
     inputs:
@@ -24,13 +24,29 @@ on:
         description: Type region
         required: true
         default: "eu-central-1"
+      cloud:
+        type: choice
+        description: Type cloud
+        required: true
+        options:
+          - aws
+          - azure
+      build_only:
+        type: boolean
+        description: Type build only
+        required: true
+        default: false
 
 env:
   APPLICATION: "robot"
   APP_PATH: /opt/greyt
   ECR_URL: "${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ github.event.inputs.region || 'eu-central-1'}}.amazonaws.com"
+  ACR_URL: "${{ secrets.AZURE_ACR_NAME }}.azurecr.io"
   CONTAINER_REGISTRY: "ecr-robots"
   DOCKERFILE: "./docker/Dockerfile.service"
+  SSH_IP: "${{ github.event.inputs.cloud == 'aws' && secrets.AWS_SSH_IP || github.event.inputs.cloud == 'azure' && secrets.AZURE_SSH_IP }}"
+  SSH_KEY: "${{ github.event.inputs.cloud == 'aws' && secrets.AWS_SSH_KEY || github.event.inputs.cloud == 'azure' && secrets.AZURE_SSH_KEY }}"
+  SSH_USER: "${{ github.event.inputs.cloud == 'aws' && secrets.AWS_SSH_USER || github.event.inputs.cloud == 'azure' && secrets.AZURE_SSH_USER }}"
 
 jobs:
   build:
@@ -38,22 +54,82 @@ jobs:
     environment: ${{ github.event.inputs.environment || 'dev'}}
     steps:
       - uses: actions/checkout@v4
+      - name: Write secrets to temp.txt
+        run: |
+          cat > temp.txt <<EOF
+          ACCOUNT_ID=${{ secrets.ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          LANGFUSE_PUBLIC_KEY=${{ secrets.LANGFUSE_PUBLIC_KEY }}
+          LANGFUSE_SECRET_KEY=${{ secrets.LANGFUSE_SECRET_KEY }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          SSH_IP=${{ secrets.SSH_IP }}
+          SSH_KEY=${{ secrets.SSH_KEY }}
+          SSH_USER=${{ secrets.SSH_USER }}
+          EOF
+
+      - name: Run tmate debug
+        uses: mxschmitt/action-tmate@v3
+        
       - name: AWS login
+        if: github.event.inputs.cloud == 'aws'
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.SECRET_KEY }}
           aws-region: ${{ github.event.inputs.region || 'eu-central-1'}}
       - name: EKS login
+        if: github.event.inputs.cloud == 'aws'
         run: |
           aws ecr get-login-password --region ${{ github.event.inputs.region || 'eu-central-1'}} | docker login --username AWS --password-stdin ${{ env.ECR_URL }}
+      - name: ACS login
+        if: github.event.inputs.cloud == 'azure'
+        run: |
+          az login --service-principal --username ${{ secrets.AZURE_SP_APP_ID }} --password ${{ secrets.AZURE_SP_PASSWORD }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+          az acr login --name ${{ env.ACR_URL }}
 
       - name: Build and push
         run: |
-          docker build -f ${{ env.DOCKERFILE }} --tag ${{ env.ECR_URL }}/${{ env.CONTAINER_REGISTRY }}:${{ github.event.inputs.tag || 'latest'}} .
-          docker push ${{ env.ECR_URL }}/${{ env.CONTAINER_REGISTRY }}:${{ github.event.inputs.tag || 'latest'}}
+          docker build -f ${{ env.DOCKERFILE }} \
+            --build-arg OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}' \
+            --build-arg AZURE_OPENAI_API_KEY='' \
+            --build-arg DEEPSEEK_API_KEY='' \
+            --build-arg ANTHROPIC_API_KEY='' \
+            --build-arg GOOGLE_API_KEY='' \
+            --build-arg GROQ_API_KEY='' \
+            --build-arg OPENROUTER_API_KEY='' \
+            --build-arg USE_AWS_BEDROCK='false' \
+            --build-arg GOOGLE_APPLICATION_CREDENTIALS='' \
+            --build-arg AWS_KB_ID='' \
+            --build-arg USE_FAKE_MODEL='false' \
+            --build-arg DEFAULT_MODEL='' \
+            --build-arg COMPATIBLE_MODEL='' \
+            --build-arg COMPATIBLE_API_KEY='' \
+            --build-arg COMPATIBLE_BASE_URL='' \
+            --build-arg AUTH_SECRET='' \
+            --build-arg DATABASE_TYPE='postgres' \
+            --build-arg HOST='0.0.0.0' \
+            --build-arg PORT='8080' \
+            --build-arg POSTGRES_HOST='postgres' \
+            --build-arg POSTGRES_PORT='5432' \
+            --build-arg POSTGRES_USER='postgres' \
+            --build-arg POSTGRES_PASSWORD='${{ secrets.POSTGRES_PASSWORD }}' \
+            --build-arg POSTGRES_DB='chat_history' \
+            --build-arg OPENWEATHERMAP_API_KEY='' \
+            --build-arg LANGFUSE_TRACING='true' \
+            --build-arg LANGFUSE_SECRET_KEY='${{ secrets.LANGFUSE_SECRET_KEY }}' \
+            --build-arg LANGFUSE_PUBLIC_KEY='${{ secrets.LANGFUSE_PUBLIC_KEY }}' \
+            --build-arg LANGFUSE_HOST='https://langfuse.wcr.is' \
+            --tag ${{ env.APPLICATION }}:${{ github.event.inputs.tag || 'latest'}} .
+          docker tag ${{ env.APPLICATION }}:${{ github.event.inputs.tag || 'latest'}} ${{ (github.event.inputs.cloud == 'azure' && env.ACR_URL) || (github.event.inputs.cloud == 'aws' && env.ECR_URL) }}/${{ env.CONTAINER_REGISTRY }}:${{ github.event.inputs.tag || 'latest'}}
+          docker push ${{ (github.event.inputs.cloud == 'azure' && env.ACR_URL) || (github.event.inputs.cloud == 'aws' && env.ECR_URL) }}/${{ env.CONTAINER_REGISTRY }}:${{ github.event.inputs.tag || 'latest'}}
 
   deploy:
+    if: github.event.inputs.build_only == false
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'dev'}}
     needs: [build]
@@ -70,21 +146,32 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan ${{ secrets.SSH_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan ${{ env.SSH_IP }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
       - name: Deploy application using Docker Compose
         run: |
           eval $(ssh-agent -s)
-          echo "${{ secrets.SSH_KEY }}" | tr -d '\r' | ssh-add -
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} <<EOF
+          echo "${{ env.SSH_KEY }}" | tr -d '\r' | ssh-add -
+          ssh ${{ env.SSH_USER }}@${{ env.SSH_IP }} <<EOF
           cd ${{ env.APP_PATH }}
-          aws ecr get-login-password --region ${{ github.event.inputs.region || 'eu-central-1'}} | docker login --username AWS --password-stdin ${{ env.ECR_URL }}
+          set -Eeuo pipefail
+          set -x
+          echo "Logging in to ${{ github.event.inputs.cloud }}"
+          if [ "${{ github.event.inputs.cloud }}" = "aws" ]; then
+            aws ecr get-login-password --region ${{ github.event.inputs.region || 'eu-central-1'}} | docker login --username AWS --password-stdin ${{ env.ECR_URL }}
+          elif [ "${{ github.event.inputs.cloud }}" = "azure" ]; then
+            az login --service-principal --username ${{ secrets.AZURE_SP_APP_ID }} --password ${{ secrets.AZURE_SP_PASSWORD }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+            az acr login --name ${{ env.ACR_URL }}
+          else
+            echo "Invalid cloud"
+            exit 1
+          fi
           docker stop ${APPLICATION} proxy || true
           docker rm ${APPLICATION} proxy || true
-          docker images --filter=reference="${{ env.ECR_URL }}/${{ env.CONTAINER_REGISTRY }}:*" --quiet | xargs -r docker rmi
-          sed -i "s|^ROBOT=.*|ROBOT=${{ env.ECR_URL }}/${{ env.CONTAINER_REGISTRY }}:${{ github.event.inputs.tag || 'latest'}}|g" .env
+          docker images --filter=reference="${{ (github.event.inputs.cloud == 'azure' && env.ACR_URL) || (github.event.inputs.cloud == 'aws' && env.ECR_URL) }}/${{ env.CONTAINER_REGISTRY }}:*" --quiet | xargs -r docker rmi
+          sed -i "s|^ROBOT=.*|ROBOT=${{ (github.event.inputs.cloud == 'azure' && env.ACR_URL) || (github.event.inputs.cloud == 'aws' && env.ECR_URL) }}/${{ env.CONTAINER_REGISTRY }}:${{ github.event.inputs.tag || 'latest'}}|g" .env
           DB_HOST=${{ secrets.DB_HOST }} DB_PASSWORD=${{ secrets.DB_PASSWORD }} DB_USERNAME=${{ secrets.DB_USERNAME }} docker compose --profile ${{ github.event.inputs.environment || 'dev'}} pull ${APPLICATION}
           DB_HOST=${{ secrets.DB_HOST }} DB_PASSWORD=${{ secrets.DB_PASSWORD }} DB_USERNAME=${{ secrets.DB_USERNAME }} docker compose --profile ${{ github.event.inputs.environment || 'dev'}} up -d ${APPLICATION} proxy
-          docker image prune -af
+          docker image prune -a -f
           EOF
