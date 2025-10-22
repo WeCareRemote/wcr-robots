@@ -4,8 +4,6 @@ run-name: >
       && format('Build and Deploy Robots to {0} environment > {1}', github.event.inputs.environment, github.event.inputs.cloud) 
       || format('Build and Deploy Robots to {0} environment', github.ref_name == 'master' && 'production' || 'development') }}
 on:
-  push: 
-    branches: [main]
   workflow_call:
   workflow_dispatch:
     inputs:
