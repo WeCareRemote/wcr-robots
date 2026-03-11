@@ -101,7 +101,9 @@ jobs:
           docker push ${{ (github.event.inputs.cloud == 'azure' && env.ACR_URL) || (github.event.inputs.cloud == 'aws' && env.ECR_URL) }}/${{ env.CONTAINER_REGISTRY }}:${{ github.event.inputs.tag || 'latest'}}
 
   deploy:
-    if: github.event.inputs.build_only == false
+    # workflow_dispatch inputs are strings in github.event.inputs ("true"/"false")
+    # while workflow_call can pass native booleans, so handle both safely.
+    if: ${{ github.event.inputs.build_only == 'false' || inputs.build_only == false }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'development'}}
     needs: [build]
