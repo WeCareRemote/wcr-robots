@@ -649,15 +649,18 @@ async def feedback(feedback: Feedback) -> FeedbackResponse:
     credentials can be stored and managed in the service rather than the client.
     See: https://api.smith.langchain.com/redoc#tag/feedback/operation/create_feedback_api_v1_feedback_post
     """
-    # u can do the similar thing with LANGFUSE as well!
-    client = LangsmithClient()
-    kwargs = feedback.kwargs or {}
-    client.create_feedback(
-        run_id = feedback.run_id,
-        key    = feedback.key,
-        score  = feedback.score,
-        **kwargs,
-    )
+    # Keep chat UX non-blocking: feedback should never fail the request path.
+    try:
+      client = LangsmithClient()
+      kwargs = feedback.kwargs or {}
+      client.create_feedback(
+          run_id = feedback.run_id,
+          key    = feedback.key,
+          score  = feedback.score,
+          **kwargs,
+      )
+    except Exception as e:
+      logger.warning(f"Feedback submission skipped: {e}")
     return FeedbackResponse()
 
 
