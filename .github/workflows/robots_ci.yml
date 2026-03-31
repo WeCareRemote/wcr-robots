@@ -76,14 +76,14 @@ jobs:
             --build-arg AZURE_OPENAI_API_KEY='' \
             --build-arg DEEPSEEK_API_KEY='' \
             --build-arg ANTHROPIC_API_KEY='' \
-            --build-arg GOOGLE_API_KEY='' \
+            --build-arg GOOGLE_API_KEY='${{ secrets.GOOGLE_API_KEY }}' \
             --build-arg GROQ_API_KEY='' \
             --build-arg OPENROUTER_API_KEY='' \
             --build-arg USE_AWS_BEDROCK='false' \
             --build-arg GOOGLE_APPLICATION_CREDENTIALS='' \
             --build-arg AWS_KB_ID='' \
             --build-arg USE_FAKE_MODEL='false' \
-            --build-arg DEFAULT_MODEL='' \
+            --build-arg DEFAULT_MODEL='gemini-2.0-flash' \
             --build-arg COMPATIBLE_MODEL='' \
             --build-arg COMPATIBLE_API_KEY='' \
             --build-arg COMPATIBLE_BASE_URL='' \
