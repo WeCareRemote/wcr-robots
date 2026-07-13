@@ -10,6 +10,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.types import StreamWriter
 from langfuse import Langfuse, get_client
 import json
+import re
 from langgraph.graph.message import add_messages
 
 from core import get_model, settings
@@ -87,7 +88,12 @@ class Ask_Ai_AgentState(BaseModel):
     )
     
     cant_help_text: str = Field(
-        default     = "Sorry, I cannot help you in this matter.",
+        default     = (
+            "I can help with general refugee-support, German bureaucracy, documents, "
+            "and wcr.is form questions. I cannot decide legal eligibility or replace "
+            "official advice. Please ask a question in that scope, or contact a "
+            "qualified counselor for case-specific decisions."
+        ),
         title       = "Cannot Help Text",
         description = ("A Predefined Text. If the user's question is not related to refugee help. This predefined text is streamed"),
     )
@@ -204,6 +210,29 @@ def chat_history_to_text(
     return "\n".join(lines)
 
 
+SUPPORT_TOPIC_PATTERN = re.compile(
+    r"\b("
+    r"wcr|refugee|asylum|ukraine|ukrainian|temporary protection|residence permit|"
+    r"aufenthalt|jobcenter|bürgergeld|buergergeld|social benefit|benefits|"
+    r"anmeldung|registration|ausländerbehörde|auslaenderbehoerde|visa|"
+    r"document|documents|passport|id card|form|questionnaire|application|"
+    r"germany|german|bureaucracy|integration|language course|housing|health insurance|"
+    r"counselor|client|draft|reply|message"
+    r")\b",
+    re.IGNORECASE,
+)
+
+GREETING_PATTERN = re.compile(
+    r"^\s*(hi|hello|hey|hallo|guten tag|good morning|good afternoon|good evening)\b",
+    re.IGNORECASE,
+)
+
+
+def is_obviously_supported_query(query: str) -> bool:
+    text = query or ""
+    return bool(GREETING_PATTERN.search(text) or SUPPORT_TOPIC_PATTERN.search(text))
+
+
 
 
 
@@ -213,7 +242,7 @@ You are `ask ai`, an assistant for refugees using the wcr.is website. The site h
 
 TASK: Decide if the user's message is relevant to Refugee_Bridge assistance. Return ONLY a binary score: 'yes' or 'no'.
 
-Mark as 'yes' if the message concerns: using wcr.is; choosing/finding the right form; understanding or answering form questions (You do not have access to the form itself, so you must infer. If the message appears to come from a user filling out a form and asking about something within it, classify as 'yes'.); definitions of legal/immigration terms; document requirements; site navigation or technical issues; or general greetings/openers while using the service. Do NOT classify greetings as 'no'.
+Mark as 'yes' if the message concerns: using wcr.is; choosing/finding the right form; understanding or answering form questions (You do not have access to the form itself, so you must infer. If the message appears to come from a user filling out a form and asking about something within it, classify as 'yes'.); definitions of legal/immigration terms; German bureaucracy; integration in Germany; Jobcenter, Bürgergeld/Buergergeld, Anmeldung, residence permits, asylum, social benefits, language courses, housing, health insurance, document requirements; counselor/client message drafting; site navigation or technical issues; or general greetings/openers while using the service. Do NOT classify greetings as 'no'.
 
 Mark as 'no' only if the message is clearly unrelated to refugee support or the wcr.is forms.
 """
@@ -280,6 +309,11 @@ async def query_relevance_router(state: Ask_Ai_AgentState, config: RunnableConfi
     if VERBOSE:
         print("---CHECK RELEVANCE---")
 
+    if is_obviously_supported_query(user_question):
+        if VERBOSE:
+            print("---CHECK RELEVANCE: HEURISTIC YES---")
+        return "answer_user_query"
+
     # llm = ChatGoogleGenerativeAI(
     #     model="gemini-2.0-flash-lite",
     #     api_key=GEMINI_API_KEY,
@@ -292,12 +326,16 @@ async def query_relevance_router(state: Ask_Ai_AgentState, config: RunnableConfi
     # print(config["configurable"].get("model", settings.DEFAULT_MODEL))
 
     grader = (RELEVANCE_GRADER_PROMPT | llm.with_structured_output(GradeRelevance)).with_config(tags=["skip_stream"])
-    relevance_grade: GradeRelevance = await grader.ainvoke(
-        {
-            "query":         user_question,
-            "chat_history":  chat_history_to_text(trim_messages(state.messages)[:-1]), 
-        }
-    )
+    try:
+        relevance_grade: GradeRelevance = await grader.ainvoke(
+            {
+                "query":         user_question,
+                "chat_history":  chat_history_to_text(trim_messages(state.messages)[:-1]), 
+            }
+        )
+    except Exception as e:
+        print(f"Relevance grader failed: {type(e).__name__}: {e}")
+        return "answer_user_query" if is_obviously_supported_query(user_question) else "cant_help"
 
     score = (relevance_grade.binary_score or "").strip().lower()
     return "answer_user_query" if score == "yes" else "cant_help"
@@ -332,9 +370,9 @@ async def cant_help(state: Ask_Ai_AgentState, config: RunnableConfig, writer: St
     # print(user_language)
 
     if user_language.lower() == 'russian':
-        state.cant_help_text = 'Извините, я не могу вам помочь в этом вопросе.'
+        state.cant_help_text = 'Я могу помочь с общими вопросами поддержки беженцев, немецкой бюрократией, документами и формами wcr.is. Я не могу определять юридическую пригодность или заменять официальную консультацию.'
     elif user_language.lower() == 'ukrainian':
-        state.cant_help_text = 'Вибачте, я не можу вам допомогти в цьому питанні.'
+        state.cant_help_text = 'Я можу допомогти із загальними питаннями підтримки біженців, німецькою бюрократією, документами та формами wcr.is. Я не можу визначати юридичну відповідність або замінювати офіційну консультацію.'
     for word in state.cant_help_text.split():
         writer(word + ' ')
     return {"messages": [AIMessage(content=state.cant_help_text)]}
@@ -346,13 +384,12 @@ async def cant_help(state: Ask_Ai_AgentState, config: RunnableConfig, writer: St
 
 ANSWER_USER_QUERY_SYSTEM_MESSAGE = ChatPromptTemplate.from_messages([
     ("system", """
-Your name is `ask ai`. You are a kind, patient assistant for refugees using the wcr.is website.
+Your name is `ask ai`. You are a kind, patient assistant for counselors and refugees using the wcr.is website.
 
-The site has multiple forms.
-The user chooses the form that matches their current need.
-They fill out the form in another tab, not in this chat.
-While completing it, they may ask you about words, legal terms, or any confusing part.
-Your job is to guide them so they can finish the form correctly.
+The site has multiple forms and a counselor workspace.
+The user may ask about forms, German bureaucracy, integration in Germany, documents, benefits, or how to draft a client-facing reply.
+Your job is to give safe general information and help the counselor or refugee understand next steps.
+You must not make final legal eligibility decisions or replace official advice.
 
 How to respond:
 - The user has selected <user_language> {user_language} </user_language> language. So your response should be in <user_language> {user_language} </user_language> language.
@@ -361,6 +398,7 @@ How to respond:
 - Use simple, everyday language.
 - Explain step by step.
 - Focus on the exact question the user is stuck on.
+- For benefits such as Bürgergeld, give general process information and recommend contacting the Jobcenter or a qualified counselor for case-specific eligibility.
 - Give short examples when helpful.
 - If you need details, ask one clear question at a time.
 - Adjust your tone and explanation style to fit the person you’re talking to.
@@ -370,7 +408,7 @@ How to respond:
         - If the question is unclear or sloppy: use simpler language, slow down, and give more (and more concrete) examples.
         - If the question is eloquent and precise: be succinct and get straight to the point, with minimal examples.
 
-- Name of the form is given below. Always tell the user that you are currently helping with this form.
+- If a form is given below, use it as context and tell the user that you are currently helping with this form.
 
 Current form:
 <form>
@@ -397,9 +435,10 @@ except Exception as e:
     # Keep service functional when Langfuse credentials/prompts are unavailable.
     ANSWER_USER_QUERY_SYSTEM_MESSAGE = ChatPromptTemplate.from_messages([
         ("system", """
-Your name is `ask ai`. You are a kind, patient assistant for refugees using the wcr.is website.
-The site has multiple forms and users may ask for help while filling them.
+Your name is `ask ai`. You are a kind, patient assistant for counselors and refugees using the wcr.is website.
+Users may ask for help with forms, German bureaucracy, integration, documents, benefits, or drafting client-facing replies.
 Respond in {user_language}. Keep responses supportive, clear, and concise.
+Give general information only; do not make final legal eligibility decisions or replace official advice.
 Current form:
 <form>
 {form_str}
@@ -481,4 +520,3 @@ builder.add_conditional_edges(source="query_relevance", path=query_relevance_rou
 
 # Compile the graph with persistent checkpointer and in-memory store
 ask_ai_agent = builder.compile()#checkpointer=checkpointer)# store=across_thread_memory)
-
