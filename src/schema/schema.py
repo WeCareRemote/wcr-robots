@@ -4,6 +4,7 @@ from typing import Any, Literal, NotRequired, Optional, Annotated, List, Dict
 from sqlmodel import SQLModel
 
 from schema.models import AllModelEnum, AnthropicModelName, OpenAIModelName
+from trail.models import ResolvedNodeRuntime
 
 
 class AgentInfo(BaseModel):
@@ -73,6 +74,13 @@ class UserInput(BaseModel):
         description="The language of the user.",
         default='english',
         examples=['english', 'russian', 'ukrainian', 'german'],
+    )
+    trail_runtime: ResolvedNodeRuntime | None = Field(
+        description=(
+            "Trusted, server-resolved semantic instructions for the active trail node. "
+            "Values must already satisfy the node budget invariants."
+        ),
+        default=None,
     )
 
 
@@ -199,4 +207,3 @@ class TokenPayload(SQLModel):
         May be `None` for anonymous/invalid tokens or when not present.
     """
     sub: Optional[str] = None
-
