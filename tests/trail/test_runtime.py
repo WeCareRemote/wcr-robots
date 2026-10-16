@@ -5,6 +5,8 @@ from trail import (
     Actor,
     InMemorySemanticTemplateRepository,
     NodeSlider,
+    ResolvedNodeRuntime,
+    ResolvedSliderInstruction,
     SemanticTemplate,
     SemanticTemplateService,
     TemplateContext,
@@ -147,3 +149,25 @@ def test_processing_resolves_instructions_from_post_spring_values() -> None:
     assert [slider.value for slider in balanced] == [1.0, 1.0, 3.0]
     assert [item.final_value for item in runtime.sliders] == [1.0, 1.0, 3.0]
     assert runtime.sliders[2].instruction.startswith("Moderately prefer")
+
+
+def _resolved(slider_id: str, instruction: str = "Keep this neutral.") -> ResolvedSliderInstruction:
+    return ResolvedSliderInstruction(
+        slider_id=slider_id,
+        slider_name=f"Slider {slider_id}",
+        final_value=0.0,
+        instruction=instruction,
+        template_id="global-priority-v1",
+        template_version=1,
+    )
+
+
+def test_runtime_payload_rejects_oversized_instruction_text() -> None:
+    with pytest.raises(ValidationError):
+        ResolvedNodeRuntime(node_id="planning", sliders=[_resolved("speed", instruction="x" * 501)])
+
+
+def test_runtime_payload_caps_the_number_of_sliders() -> None:
+    # Zero-valued sliders cost no budget, so only an explicit cap bounds the prompt block.
+    with pytest.raises(ValidationError):
+        ResolvedNodeRuntime(node_id="planning", sliders=[_resolved(str(index)) for index in range(33)])

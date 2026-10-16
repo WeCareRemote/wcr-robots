@@ -18,6 +18,11 @@ templates.
 7. `format_runtime_instructions` creates the bounded system-instruction block consumed by the
    existing Ask AI graph through `UserInput.trail_runtime`.
 
+`UserInput.trail_runtime` arrives in the request body, so the service treats it as user
+preferences, not as trusted configuration. `ResolvedNodeRuntime` bounds it: at most 32 sliders per
+node, instructions up to 500 characters, and ids and names up to 120 characters. Once a caller
+exists, the target is to accept only slider values and resolve the instructions in this service.
+
 The optional `deadzone` parameter maps `-0.5`, `0.0`, and `+0.5` to neutral when enabled. It is
 disabled by default because the product specification leaves that behavior optional.
 

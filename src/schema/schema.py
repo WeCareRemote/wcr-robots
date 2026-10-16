@@ -77,7 +77,7 @@ class UserInput(BaseModel):
     )
     trail_runtime: ResolvedNodeRuntime | None = Field(
         description=(
-            "Trusted, server-resolved semantic instructions for the active trail node. "
+            "Resolved semantic instructions for the active trail node, treated as user preferences. "
             "Values must already satisfy the node budget invariants."
         ),
         default=None,

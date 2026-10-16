@@ -80,3 +80,5 @@ async def test_answer_user_query_adds_trail_semantics_as_system_context(monkeypa
 
     system_messages = [message for message in captured["messages"] if isinstance(message, SystemMessage)]
     assert any("Accessibility (+2.5)" in str(message.content) for message in system_messages)
+    # The block arrives in the request body, so the prompt must not vouch for it.
+    assert not any("trusted" in str(message.content).lower() for message in system_messages)

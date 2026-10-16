@@ -76,7 +76,7 @@ def process_node_slider_change(
 
 
 def format_runtime_instructions(runtime: ResolvedNodeRuntime | None) -> str:
-    """Create a bounded prompt block from trusted, resolved semantic instructions."""
+    """Create a bounded prompt block from resolved semantic instructions."""
 
     if runtime is None or not runtime.sliders:
         return "No trail slider instructions are active."

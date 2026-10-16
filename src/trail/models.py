@@ -1,5 +1,12 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+# The resolved runtime arrives in the request body and ends up in the prompt, so
+# its size is bounded here. Zero-valued sliders cost no budget, which is why the
+# slider count needs its own cap. The longest default instruction is ~100 chars.
+MAX_ID_LENGTH = 120
+MAX_INSTRUCTION_LENGTH = 500
+MAX_SLIDERS_PER_NODE = 32
+
 
 def _validate_half_step_value(value: float) -> float:
     if not -5.0 <= value <= 5.0:
@@ -30,11 +37,11 @@ class ResolvedSliderInstruction(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    slider_id: str
-    slider_name: str
+    slider_id: str = Field(min_length=1, max_length=MAX_ID_LENGTH)
+    slider_name: str = Field(min_length=1, max_length=MAX_ID_LENGTH)
     final_value: float
-    instruction: str
-    template_id: str
+    instruction: str = Field(max_length=MAX_INSTRUCTION_LENGTH)
+    template_id: str = Field(min_length=1, max_length=MAX_ID_LENGTH)
     template_version: int
 
     @field_validator("final_value")
@@ -48,8 +55,8 @@ class ResolvedNodeRuntime(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    node_id: str
-    sliders: list[ResolvedSliderInstruction]
+    node_id: str = Field(min_length=1, max_length=MAX_ID_LENGTH)
+    sliders: list[ResolvedSliderInstruction] = Field(max_length=MAX_SLIDERS_PER_NODE)
 
     @model_validator(mode="after")
     def validate_budget_invariants(self) -> "ResolvedNodeRuntime":
