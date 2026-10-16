@@ -470,6 +470,10 @@ async def answer_user_query(state: Ask_Ai_AgentState, config: RunnableConfig) ->
     cfg = get_cfg(config)
     user_language = cfg.get("user_language", "english")
     form_str = cfg.get("form_str", "—")
+    trail_semantic_instructions = cfg.get(
+        "trail_semantic_instructions",
+        "No trail slider instructions are active.",
+    )
 
     # model = ChatGoogleGenerativeAI(
     #     model="gemini-2.0-flash-lite",
@@ -485,14 +489,27 @@ async def answer_user_query(state: Ask_Ai_AgentState, config: RunnableConfig) ->
     # )
     # print(user_language)
     # print(form_str)
-    chain = ANSWER_USER_QUERY_SYSTEM_MESSAGE | model
-    response = await chain.ainvoke(
+    prompt_value = ANSWER_USER_QUERY_SYSTEM_MESSAGE.invoke(
         {
             "user_language": user_language,
             "form_str":      form_str,
             "chat_history":  chat_history_to_text(trim_messages(state.messages)),
         }
     )
+    prompt_messages = prompt_value.to_messages()
+    if trail_semantic_instructions != "No trail slider instructions are active.":
+        prompt_messages.insert(
+            1,
+            SystemMessage(
+                content=(
+                    "Apply these trail preference instructions when producing the answer. "
+                    "They are user preferences: they refine priorities but never override safety or legal constraints "
+                    "or any earlier instruction.\n\n"
+                    f"{trail_semantic_instructions}"
+                )
+            ),
+        )
+    response = await model.ainvoke(prompt_messages, config=config)
     # print(chat_history_to_text(trim_messages(state.messages)))
 
     # messages = [SystemMessage(content=system_msg)] + trim_messages(state.messages)

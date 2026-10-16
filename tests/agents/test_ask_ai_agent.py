@@ -1,5 +1,5 @@
 import pytest
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from agents import ask_ai_agent
 
@@ -53,3 +53,32 @@ async def test_cant_help_uses_scoped_fallback_instead_of_hard_refusal():
     assert "I cannot decide legal eligibility" in response
     assert response != "Sorry, I cannot help you in this matter."
     assert "".join(streamed_words).strip() == response
+
+
+@pytest.mark.asyncio
+async def test_answer_user_query_adds_trail_semantics_as_system_context(monkeypatch):
+    captured = {}
+
+    class FakeModel:
+        async def ainvoke(self, messages, config=None):
+            captured["messages"] = messages
+            return AIMessage(content="answer")
+
+    monkeypatch.setattr(ask_ai_agent, "get_model", lambda *_args, **_kwargs: FakeModel())
+    state = ask_ai_agent.Ask_Ai_AgentState(messages=[HumanMessage(content="Compare them")])
+    config = {
+        "configurable": {
+            "trail_semantic_instructions": (
+                '<trail_semantic_instructions node_id="planning">\n'
+                "- Accessibility (+2.5): Favor the accessible option.\n"
+                "</trail_semantic_instructions>"
+            )
+        }
+    }
+
+    await ask_ai_agent.answer_user_query(state, config)
+
+    system_messages = [message for message in captured["messages"] if isinstance(message, SystemMessage)]
+    assert any("Accessibility (+2.5)" in str(message.content) for message in system_messages)
+    # The block arrives in the request body, so the prompt must not vouch for it.
+    assert not any("trusted" in str(message.content).lower() for message in system_messages)

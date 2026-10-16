@@ -59,6 +59,7 @@ from service.utils import (
     langchain_to_chat_message,
     remove_tool_calls,
 )
+from trail.runtime import format_runtime_instructions
 
 
 import jwt
@@ -342,13 +343,15 @@ async def _handle_input(user_input: UserInput, agent: AgentGraph) -> tuple[dict[
     user_id       = user_input.user_id   or str(uuid4())
     form_str      = user_input.form_str  or None 
     user_language = user_input.user_language  or 'english'
+    trail_semantic_instructions = format_runtime_instructions(user_input.trail_runtime)
 
     configurable = {
         "thread_id": thread_id,
         "model": user_input.model,
         "user_id": user_id, 
         "form_str": form_str, 
-        "user_language": user_language
+        "user_language": user_language,
+        "trail_semantic_instructions": trail_semantic_instructions,
         }
 
                         

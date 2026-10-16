@@ -125,6 +125,62 @@ def test_invoke_custom_agent_config(test_client, mock_agent) -> None:
     assert response.status_code == 422
 
 
+def test_invoke_passes_resolved_trail_runtime_as_semantic_instructions(
+    test_client, mock_agent
+) -> None:
+    response = test_client.post(
+        "/invoke",
+        json={
+            "message": "Help me compare these options",
+            "trail_runtime": {
+                "node_id": "planning",
+                "sliders": [
+                    {
+                        "slider_id": "accessibility",
+                        "slider_name": "Accessibility",
+                        "final_value": 2.5,
+                        "instruction": "Favor the accessible option.",
+                        "template_id": "global-priority-v1",
+                        "template_version": 1,
+                    }
+                ],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    config = mock_agent.ainvoke.await_args.kwargs["config"]
+    instructions = config["configurable"]["trail_semantic_instructions"]
+    assert 'node_id="planning"' in instructions
+    assert "Accessibility (+2.5): Favor the accessible option." in instructions
+
+
+def test_invoke_rejects_trail_runtime_that_violates_budget(test_client, mock_agent) -> None:
+    slider = {
+        "slider_name": "Priority",
+        "final_value": 3.0,
+        "instruction": "Prefer it.",
+        "template_id": "global-priority-v1",
+        "template_version": 1,
+    }
+    response = test_client.post(
+        "/invoke",
+        json={
+            "message": "Help me compare these options",
+            "trail_runtime": {
+                "node_id": "planning",
+                "sliders": [
+                    {**slider, "slider_id": "a"},
+                    {**slider, "slider_id": "b"},
+                ],
+            },
+        },
+    )
+
+    assert response.status_code == 422
+    mock_agent.ainvoke.assert_not_awaited()
+
+
 def test_invoke_interrupt(test_client, mock_agent) -> None:
     QUESTION = "What is the weather in Tokyo?"
     ANSWER = "The weather in Tokyo is 70 degrees."
